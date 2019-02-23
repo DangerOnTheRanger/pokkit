@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pokkit-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pokkit-server # this has to match template.metadata.labels.app
+  template:
+    metadata:
+      labels:
+        app: pokkit-server
+    spec:
+      containers:
+      - name: pokkit-server
+        image: pokkit-server:latest
+        # ports:
+        # - containerPort: 80
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: pokkit-sreer
+spec:
+  selector:
+    app: pokkit-server
+  ports:
+  # - protocol: TCP
+  #   port: 2828
+  #   targetPort: 2828
