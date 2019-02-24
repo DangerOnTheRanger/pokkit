@@ -1,4 +1,4 @@
-pub const BUFFER_SIZE: usize = 512;
+pub const BUFFER_SIZE: usize = 127;
 
 #[derive(Copy, Clone)]
 pub enum MsgType {
@@ -7,6 +7,7 @@ pub enum MsgType {
     Append(),
 }
 
+#[derive(Clone)]
 pub struct Msg {
     pub pos: usize,
     pub len: usize,
@@ -15,28 +16,27 @@ pub struct Msg {
 }
 
 impl Msg {
-    pub fn read_msg(inp: &mut impl std::io::Read) -> Result<Self, std::io::Error> {
+    pub fn read_msg(inp: &mut impl std::io::Read) -> Self {
+        let mut read: Self;
         unsafe {
-            let mut read: Self = std::mem::uninitialized();
-
-            inp.read_exact(to_byte_slice_mut(&mut read.pos))?;
-            inp.read_exact(to_byte_slice_mut(&mut read.len))?;
-            inp.read_exact(&mut read.buff)?;
-            inp.read_exact(to_byte_slice_mut(&mut read.msg))?;
-
-            read.pos = usize::from_le(read.pos);
-            read.len = usize::from_le(read.len);
-
-            Ok(read)
+            read = std::mem::uninitialized();
+            let sz = inp.read(to_byte_slice_mut(&mut read)).unwrap();
+            if sz < std::mem::size_of::<Self>() {
+                return Self::default();
+            }
         }
+
+        read.pos = usize::from_le(read.pos);
+        read.len = usize::from_le(read.len);
+        read
     }
 
     pub fn write_msg(&self, out: &mut impl std::io::Write) -> Result<(), std::io::Error> {
+        let mut to_write = self.clone();
+        to_write.len = to_write.len.to_le();
+        to_write.pos = to_write.pos.to_le();
         unsafe {
-            out.write_all(to_byte_slice(&self.pos.to_le()))?;
-            out.write_all(to_byte_slice(&self.len.to_le()))?;
-            out.write_all(&self.buff)?;
-            out.write_all(to_byte_slice(&self.msg))?;
+            out.write_all(to_byte_slice(&to_write))?;
         }
         Ok(())
     }

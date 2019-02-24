@@ -13,7 +13,7 @@ name="patch_b"
 path="./patch_b/main.rs"
 
 [lib]
-name="diff_msg"
-path="./diff_msg/lib.rs"
+name="msg"
+path="./msg/lib.rs"
 
 [dependencies]
