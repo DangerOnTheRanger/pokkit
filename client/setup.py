@@ -12,7 +12,7 @@ setup(
     install_requires=['PyQt5', 'fuse-python'],
     entry_points={
         'console_scripts': [
-            'pokkit = pokkit.client.__main__:main',
+            'pokkit-client = pokkit.client.__main__:main',
         ],
     },
 )

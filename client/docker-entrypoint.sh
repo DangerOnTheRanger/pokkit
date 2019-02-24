@@ -1,2 +1,2 @@
-/usr/local/bin/pokkit
+/usr/local/bin/pokkit-client
 cat /pokkit-mount/example
