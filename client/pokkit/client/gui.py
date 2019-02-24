@@ -1,14 +1,16 @@
 '''This contains GUI elements we invoke in other code.'''
 
 # http://pyqt.sourceforge.net/Docs/PyQt5/sip-classes.html
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout
+)
 from PyQt5.QtCore import Qt, QCoreApplication
-
+import typing
 
 title = 'Pokkit'
 
 
-def choose(prompt_, choices):
+def choose(prompt_: str, choices: typing.List[str]):
     '''Returns the index of the selected choice'''
 
     app = QApplication([])
