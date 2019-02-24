@@ -1,6 +1,12 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pokkit
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: pokkit
   name: pokkit-server
 spec:
   replicas: 1
@@ -9,23 +15,97 @@ spec:
       app: pokkit-server # this has to match template.metadata.labels.app
   template:
     metadata:
+      namespace: pokkit
       labels:
         app: pokkit-server
     spec:
       containers:
       - name: pokkit-server
-        image: pokkit-server:latest
-        # ports:
-        # - containerPort: 80
+        image: gcr.io/pokkit/pokkit-server:latest
+        ports:
+        - containerPort: 8241
 ---
 kind: Service
 apiVersion: v1
 metadata:
+  namespace: pokkit
   name: pokkit-server
 spec:
   selector:
     app: pokkit-server
   ports:
-  # - protocol: TCP
-  #   port: 2828
-  #   targetPort: 2828
+  - protocol: TCP
+    port: 8241
+    targetPort: 8241
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: pokkit
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis # this has to match template.metadata.labels.app
+  template:
+    metadata:
+      namespace: pokkit
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:5.0.3-alpine
+        ports:
+        - containerPort: 6379
+---
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: pokkit
+  name: redis
+spec:
+  selector:
+    app: redis
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+# TODO: consider master/worker redis for scalability
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: pokkit
+  name: minio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio # this has to match template.metadata.labels.app
+  template:
+    metadata:
+      namespace: pokkit
+      labels:
+        app: minio
+    spec:
+      containers:
+      - name: minio
+        image: minio/minio:latest
+        ports:
+        - containerPort: 9000
+---
+kind: Service
+apiVersion: v1
+metadata:
+  namespace: pokkit
+  name: minio
+spec:
+  selector:
+    app: minio
+  ports:
+  - protocol: TCP
+    port: 9000
+    targetPort: 9000
+# TODO: consider master/worker redis for scalability

@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
+
+# sane shell environment
 set -o pipefail -o noclobber -o errexit -o nounset -o xtrace
 cd $(dirname $0)
 
-gcloud auth configure-docker
 COMMIT_SHA=$(git rev-parse HEAD)
 PROJECT_ID=pokkit
 GCR_IMAGE=gcr.io/${PROJECT_ID}/pokkit-client:${COMMIT_SHA}
 
+# build
 docker build \
        --tag ${GCR_IMAGE} \
        --cache-from ${GCR_IMAGE} \
        .
 
+# test
 docker run \
        --cap-add SYS_ADMIN \
        --device /dev/fuse \
@@ -19,4 +22,6 @@ docker run \
        --rm \
        ${GCR_IMAGE}
 
+# auth and push (makes next build faster)
+gcloud auth configure-docker
 docker push ${GCR_IMAGE}
