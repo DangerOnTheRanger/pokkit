@@ -6,7 +6,7 @@ cd $(dirname $0)
 
 COMMIT_SHA=$(git rev-parse HEAD)
 PROJECT_ID=pokkit
-GCR_IMAGE=gcr.io/${PROJECT_ID}/pokkit-client:${COMMIT_SHA}
+GCR_IMAGE=gcr.io/${PROJECT_ID}/pokkit-client:latest
 
 # build
 docker build \
