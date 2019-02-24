@@ -40,7 +40,7 @@ class RepoFilesystem(Fuse):
         return st
             
     def readdir(self, path, offset):
-        for entry in ".", "..":
+        for entry in ".", "..", "example":
             yield fuse.Direntry(entry)
     def open(self, path, flags):
         pass
