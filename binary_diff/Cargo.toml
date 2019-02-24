@@ -1,0 +1,19 @@
+[package]
+name = "binary_diff"
+version = "0.1.0"
+authors = ["Matthew Kunjummen <mkunjummen@gmail.com>"]
+edition = "2018"
+
+[[bin]]
+name="diff_b"
+path="./diff_b/main.rs"
+
+[[bin]]
+name="patch_b"
+path="./patch_b/main.rs"
+
+[lib]
+name="diff_msg"
+path="./diff_msg/lib.rs"
+
+[dependencies]
