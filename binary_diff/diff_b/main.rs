@@ -1,50 +1,75 @@
+use std::cmp::min;
 use std::fs::File;
 use std::io::stdout;
-use std::io::Read;
+use std::io::BufRead;
+use std::io::BufReader;
 
-use diff_msg;
+use msg;
 
 fn main() -> Result<(), std::io::Error> {
     let mut args = std::env::args();
     args.next();
 
-    let mut f = File::open(args.next().unwrap())?;
-    let mut s = File::open(args.next().unwrap())?;
+    let f = File::open(args.next().unwrap())?;
+    let s = File::open(args.next().unwrap())?;
     let mut o = stdout();
 
-    let mut f_msg = diff_msg::Msg::default();
-    let mut s_msg = diff_msg::Msg::default();
+    let mut f_buff = BufReader::new(f);
+    let mut s_buff = BufReader::new(s);
+
+    let mut pos = 0;
 
     loop {
-        f_msg.len = f.read(&mut f_msg.buff)?;
-        s_msg.len = s.read(&mut s_msg.buff)?;
+        let f_block = f_buff.fill_buf()?;
+        let s_block = s_buff.fill_buf()?;
 
-        f_msg.pos += s_msg.len();
-        s_msg.pos += s_msg.len();
+        let mut s_msg: msg::Msg;
+        let len;
 
-        match (f_msg.len(), s_msg.len()) {
+        match (f_block.len(), s_block.len()) {
             (0, 0) => return Ok(()),
 
             (0, _) => {
-                s_msg.msg = diff_msg::MsgType::Append();
+                len = min(s_block.len(), msg::BUFFER_SIZE);
+                s_msg = msg::Msg {
+                    pos,
+                    len,
+                    msg: msg::MsgType::Append(),
+                    ..msg::Msg::default()
+                };
+
+                s_msg.copy_from_slice(s_block.split_at(len).0);
                 s_msg.write_msg(&mut o)?;
             }
 
             (_, 0) => {
-                diff_msg::Msg {
-                    pos: s_msg.pos,
-                    msg: diff_msg::MsgType::Trunc(),
-                    ..diff_msg::Msg::default()
+                msg::Msg {
+                    pos,
+                    msg: msg::MsgType::Trunc(),
+                    ..msg::Msg::default()
                 }
                 .write_msg(&mut o)?;
                 return Ok(());
             }
 
             (_, _) => {
-                if f_msg.iter().ne(s_msg.iter()) {
+                len = min(min(f_block.len(), s_block.len()), msg::BUFFER_SIZE);
+                s_msg = msg::Msg {
+                    pos,
+                    len,
+                    msg: msg::MsgType::Replace(),
+                    ..msg::Msg::default()
+                };
+
+                if f_block[..len].iter().ne(s_block[..len].iter()) {
+                    s_msg.copy_from_slice(s_block.split_at(len).0);
                     s_msg.write_msg(&mut o)?;
                 }
+
+                f_buff.consume(len);
             }
         }
+        s_buff.consume(len);
+        pos += len;
     }
 }
