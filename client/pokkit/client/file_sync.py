@@ -58,6 +58,7 @@ def _write_fc(fc: FileContents, new_path: Path, tmp: Path):
         old_path = tmp / '-'.join([*components, '-parent'])
         _download_url(fc.diff_url, old_path)
         diff = requests.get(url).content
+        # download parent (recursively)
         write_fc(fc.parent, old_path, tmp)
         _patch(old_path, diff, new_path)
         os.remove(old_path)
@@ -79,7 +80,7 @@ def _read_fc(new_path: Path, old_path: Path, old_fc: FileContents):
 
 def upload_one(fr: ListFileResource):
     fr.file_contents = _read_fc(core.get_path(fc), core.get_old_path(fc), fr.fc)
-    commit_op = types.CommitOp()e
+    commit_op = types.CommitOp()
     commit_op.add_file.file_resource = fr
     core.fileService.AddCommit(commit_op)
 
