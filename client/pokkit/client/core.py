@@ -1,9 +1,15 @@
 from pathlib import Path
 import yaml
+import typing
 from . import util
 
 
-def get_components(fr: FileResource) -> List[str]:
+# TOOD: import this
+class FileResource(object):
+    pass
+
+
+def get_components(fr: FileResource) -> typing.List[str]:
     return [
         fr.branch.repository.owner,
         fr.branch.repository.name,
@@ -11,16 +17,18 @@ def get_components(fr: FileResource) -> List[str]:
         *fr.path,
     ]
 
+
 class Core(object):
     def __init__(self):
-        self.config = {
-            # defaults
-            app_dir: '~/.pokkit-client',
+        with util.open_or_default('./config.yaml', default='{}') as f:
+            self.config = {
+                # defaults
+                'app_dir': '~/.pokkit-client/',
 
-            # conf file
-            **yaml.load(app_dir / 'config.yaml'),
-        }
-        self.config['app_dir'] = Path(self.config['app_dir'])
+                # conf file
+                **yaml.load(f),
+            }
+        self.config['app_dir'] = Path(self.config['app_dir']).expanduser()
         self.config['app_dir'].mkdir(exist_ok=True)
         self.config['old_dir'] = Path(self.config['app_dir']) / 'old'
         self.config['old_dir'].mkdir(exist_ok=True)
@@ -45,24 +53,6 @@ class Core(object):
             for component in get_components(fr)
         )
         return self.config['old_dir'] / name
-
-    ## Defer to grpcio
-    def send_diff(fr: FileResource, diff: bytes):
-        # TODO: this
-        pass
-
-    def send_data(fr: FileResource, data: file):
-        # TODO: this
-        pass
-
-    def get_url(fr: FileResource) -> FileUrl:
-        # TODO: this
-        pass
-
-    def set_fr(fr: FileResource):
-        # TODO: this
-        # TODO: server send pubsub alert
-        pass
 
 
 # this is a singleton, I guess
