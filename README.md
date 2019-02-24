@@ -4,6 +4,11 @@ The artist's version control system
 ## Install help
 
 ### Client side
+The client requires `FUSE` to operate; you can setup and install `FUSE` in Debian with:
+	
+	sudo apt-get install fuse
+	sudo modprobe fuse
+
 I personally like `pipenv`.
 
     cd pokkit/client
