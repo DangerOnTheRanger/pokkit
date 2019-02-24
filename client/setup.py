@@ -9,7 +9,7 @@ setup(
     author='',
     url='https://github.com/DangerOnTheRanger/',
     packages=find_namespace_packages(),
-    install_requires=['PyQt5'],
+    install_requires=['PyQt5', 'fuse-python'],
     entry_points={
         'console_scripts': [
             'pokkit = pokkit.client.__main__:main',
