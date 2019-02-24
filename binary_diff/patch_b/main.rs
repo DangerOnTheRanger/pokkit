@@ -1,6 +1,8 @@
 use std::env::args;
 use std::fs::File;
+use std::io::stdout;
 use std::io::Read;
+use std::io::Write;
 
 use diff_msg;
 
@@ -8,7 +10,12 @@ fn main() -> Result<(), std::io::Error> {
     let mut args = args();
     let mut orig = Vec::new();
 
-    File::open(args.next().unwrap())?.read_to_end(&mut orig)?;
+    args.next();
+    File::open(args.next().unwrap())
+        .unwrap()
+        .read_to_end(&mut orig)
+        .unwrap();
+
     let mut patch = File::open(args.next().unwrap())?;
 
     let mut msg = diff_msg::Msg::read_msg(&mut patch)?;
@@ -21,7 +28,7 @@ fn main() -> Result<(), std::io::Error> {
             },
 
             diff_msg::MsgType::Trunc() => {
-                orig.truncate(msg.pos);
+                orig.truncate(msg.pos + 1);
             }
 
             diff_msg::MsgType::Append() => {
@@ -30,5 +37,8 @@ fn main() -> Result<(), std::io::Error> {
         }
         msg = diff_msg::Msg::read_msg(&mut patch)?;
     }
+
+    stdout().write_all(&orig)?;
+
     Ok(())
 }
