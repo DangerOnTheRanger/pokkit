@@ -11,4 +11,7 @@ setup(name='pokkit',
       entry_points={'console_scripts': [
           'pokkit = pokkit.client.__main__:main'
       ]},
+      install_requires=[
+          'fuse-python'
+          ],
      )
