@@ -21,7 +21,7 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: pokkit-sreer
+  name: pokkit-server
 spec:
   selector:
     app: pokkit-server
