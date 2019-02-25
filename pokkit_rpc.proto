@@ -1,0 +1,131 @@
+syntax = "proto3";
+package pokkit;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+message RepositoryResource {
+  string name = 1;
+  string owner = 2;
+}
+message RepositoryOwner {
+  string name = 1;
+}
+service RepositoryService {
+  rpc CreateRepository(RepositoryResource) returns (google.protobuf.Empty) {}
+  rpc DeleteRepository(RepositoryResource) returns (google.protobuf.Empty) {}
+  rpc ListRepositories(RepositoryOwner) returns (stream RepositoryResource) {}
+}
+
+message BranchResource {
+  string name = 1;
+  bool immutable = 2;
+  bool solo = 3;
+  RepositoryResource repository = 4;
+}
+message CreateBranchRequest {
+  BranchResource parent = 1;
+  BranchResource child = 2;
+  bool immutable = 3;
+}
+service BranchService {
+  rpc CreateBranch(CreateBranchRequest) returns (google.protobuf.Empty) {}
+  rpc DeleteBranch(BranchResource) returns (google.protobuf.Empty) {}
+  rpc ListBranches(RepositoryResource) returns (stream BranchResource) {}
+}
+
+message FileContents {
+  oneof content_info {
+	string diff_url = 1;
+	string content_url = 2;
+  }
+  FileContents parent = 3;
+}
+message LockStatus {
+  bool is_locked = 1;
+  string locker = 2;
+  google.protobuf.Timestamp time = 3;
+}
+message LockTarget {
+  oneof target {
+	FileResource file = 1;
+	Directory dir = 2;
+  }
+}
+message FileResource {
+  repeated string path = 1;
+  LockStatus lock_status = 2;
+  FileContents contents = 3;
+  BranchResource branch = 4;
+}
+message RemoveFileOp {
+  FileResource resource = 1;
+}
+message AmendFileOp {
+  FileResource resource = 1;
+}
+message CommitOp {
+  oneof commit_info {
+	AmendFileOp amend_info = 1;
+	RemoveFileOp remove_info = 2;
+  }
+}
+message Directory {
+    repeated string path = 1;
+    LockStatus lock_status = 2;
+    DirectoryListing contents = 3;
+    BranchResource branch = 4;
+}
+message DirectoryListing {
+  oneof entry {
+	Directory directory = 1;
+	FileResource file = 2;
+  }
+}
+message GetFileRequest {
+  FileResource file = 1;
+  bool recursive = 2;
+}
+message ListDirectoryRequest {
+  repeated string path = 1;
+  bool recursive = 2;
+  bool fetch_contents = 3;
+}
+message FileLockStatusRequest {
+  FileResource file = 1;
+  LockStatus status = 2;
+}
+message DirLockStatusRequest {
+  Directory dir = 1;
+  LockStatus status = 2;
+}
+message AddChainLockRequest {
+  LockTarget master = 1;
+  LockTarget slave = 2;
+}
+message RemoveChainLockRequest {
+  LockTarget master = 1;
+  LockTarget slave = 2;
+}
+message ValidPathResponse {
+  bool valid = 1;
+}
+message LockStatusResponse {
+  bool locked = 1;
+}
+service FileService {
+  rpc GetFile(GetFileRequest) returns (FileContents) {}
+  rpc AddCommit(CommitOp) returns (google.protobuf.Empty) {}
+  rpc RollbackCommit(CommitOp) returns (google.protobuf.Empty) {}
+  rpc ListDirectory(ListDirectoryRequest) returns (stream DirectoryListing) {}
+  rpc ValidateFilePath(FileResource) returns (ValidPathResponse) {}
+  rpc ValidateDirPath(Directory) returns (ValidPathResponse) {}
+  rpc SetFileLockStatus(FileLockStatusRequest) returns (google.protobuf.Empty) {}
+  rpc SetDirLockStatus(DirLockStatusRequest) returns (google.protobuf.Empty) {}
+  rpc IsLocked(FileResource) returns (LockStatusResponse) {}
+  rpc AddChainLock(AddChainLockRequest) returns (google.protobuf.Empty) {}
+  rpc RemoveChainLock(RemoveChainLockRequest) returns (google.protobuf.Empty) {}
+  rpc ListChainLocks(LockTarget) returns (stream LockTarget) {}
+}
+
+

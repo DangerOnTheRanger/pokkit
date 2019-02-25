@@ -16,6 +16,17 @@ pub struct Msg {
 }
 
 impl Msg {
+    pub fn from_slice(slc: &[u8], pos: usize, msg: MsgType) -> Self {
+        let mut ret = Self {
+            pos,
+            msg,
+            len: slc.len(),
+            ..Self::default()
+        };
+        ret.copy_from_slice(slc);
+        ret
+    }
+
     pub fn read_msg(inp: &mut impl std::io::Read) -> Self {
         let mut read: Self;
         unsafe {

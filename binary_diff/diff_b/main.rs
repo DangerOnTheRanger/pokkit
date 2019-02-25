@@ -4,7 +4,8 @@ use std::io::stdout;
 use std::io::BufRead;
 use std::io::BufReader;
 
-use msg;
+use msg::Msg;
+use msg::MsgType;
 
 fn main() -> Result<(), std::io::Error> {
     let mut args = std::env::args();
@@ -23,7 +24,6 @@ fn main() -> Result<(), std::io::Error> {
         let f_block = f_buff.fill_buf()?;
         let s_block = s_buff.fill_buf()?;
 
-        let mut s_msg: msg::Msg;
         let len;
 
         match (f_block.len(), s_block.len()) {
@@ -31,22 +31,14 @@ fn main() -> Result<(), std::io::Error> {
 
             (0, _) => {
                 len = min(s_block.len(), msg::BUFFER_SIZE);
-                s_msg = msg::Msg {
-                    pos,
-                    len,
-                    msg: msg::MsgType::Append(),
-                    ..msg::Msg::default()
-                };
-
-                s_msg.copy_from_slice(s_block.split_at(len).0);
-                s_msg.write_msg(&mut o)?;
+                Msg::from_slice(&s_block[..len], pos, MsgType::Append()).write_msg(&mut o)?;
             }
 
             (_, 0) => {
-                msg::Msg {
+                Msg {
                     pos,
-                    msg: msg::MsgType::Trunc(),
-                    ..msg::Msg::default()
+                    msg: MsgType::Trunc(),
+                    ..Msg::default()
                 }
                 .write_msg(&mut o)?;
                 return Ok(());
@@ -54,22 +46,15 @@ fn main() -> Result<(), std::io::Error> {
 
             (_, _) => {
                 len = min(min(f_block.len(), s_block.len()), msg::BUFFER_SIZE);
-                s_msg = msg::Msg {
-                    pos,
-                    len,
-                    msg: msg::MsgType::Replace(),
-                    ..msg::Msg::default()
-                };
 
                 if f_block[..len].iter().ne(s_block[..len].iter()) {
-                    s_msg.copy_from_slice(s_block.split_at(len).0);
-                    s_msg.write_msg(&mut o)?;
+                    Msg::from_slice(&s_block[..len], pos, MsgType::Replace()).write_msg(&mut o)?;
                 }
 
                 f_buff.consume(len);
+                pos += len;
             }
         }
         s_buff.consume(len);
-        pos += len;
     }
 }
