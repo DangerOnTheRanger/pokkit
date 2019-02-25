@@ -10,6 +10,28 @@ import typing
 title = 'Pokkit'
 
 
+def alert(message_: str):
+    '''Returns the index of the selected choice'''
+
+    app = QApplication([])
+    window = QWidget()
+    window.setWindowTitle(title)
+
+    message = QLabel(message_)
+    message.setAlignment(Qt.AlignHCenter)
+
+    window_layout = QVBoxLayout()
+    window_layout.addWidget(message)
+    window_layout.addSpacing(10)
+    ok_button = QPushButton('Ok')
+    ok_button.clicked.connect(lambda: QCoreApplication.quit())
+    window_layout.addLayout(ok_button)
+    window.setLayout(window_layout)
+
+    window.show()
+    app.exec_()
+
+
 def choose(prompt_: str, choices: typing.List[str]):
     '''Returns the index of the selected choice'''
 
@@ -40,6 +62,31 @@ def choose(prompt_: str, choices: typing.List[str]):
     app.exec_()
 
     return result[0]
+
+
+def upload_locked_file(fr, fr_str):
+    alert(f'The file you changed, {fr_str}, is checked out by {fr.lock_status.locker}')
+    # return choose(
+    #     f'The file you changed, {fr_str}, is checked out by {fr.lock_status.locker}'
+    #     [
+    #         'Open in a new solo branch',
+    #         'Cancel and be notified when they\'re done',
+    #         'Cancel',
+    #     ],
+    # )
+
+
+def download_locked_file(fr, fr_str):
+    alert(f'The file you are opening, {fr_str}, is checked out by {fr.lock_status.locker}')
+    # return choose(
+    #     f'The file you are opening, {fr_str}, is checked out by {fr.lock_status.locker}'
+    #     [
+    #         'Open in a new solo branch',
+    #         'Open read-only',
+    #         'Cancel and be notified when they\'re done',
+    #         'Cancel',
+    #     ],
+    # )
 
 
 if __name__ == '__main__':

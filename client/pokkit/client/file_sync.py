@@ -1,17 +1,12 @@
-'''This is the client-side half of the file-sync protocol
-
-These assume interactions with the user have already been taken care of, and we
-_really do_ want to upload/downlad/etc.
-
-'''
+'''This is the client-side half of the file-sync protocol'''
 
 
 import io
 from pathlib import Path
 import os
 import shutil
-from .core import core
-
+from .core import core, get_components
+from . import gui
 
 # TOOD: import this
 class FileResource(object):
@@ -64,9 +59,11 @@ def _write_fc(fc: FileContents, new_path: Path, tmp: Path):
         os.remove(old_path)
     else:
         _download_url(fc.content_url, new_path)
+    return new_path
 
 
 def _read_fc(new_path: Path, old_path: Path, old_fc: FileContents):
+    # TODO: check hash before downloading. if hash matches, don't download.
     new_fc = FileContents()
     new_fc.parent = old_fc
 
@@ -78,12 +75,71 @@ def _read_fc(new_path: Path, old_path: Path, old_fc: FileContents):
             new_fc.content_url = Metadata.send_content(fr, fil)
 
 
-def upload_one(fr: ListFileResource):
-    fr.file_contents = _read_fc(core.get_path(fc), core.get_old_path(fc), fr.fc)
+def upload(fr: FileResource):
+    fr.file_contents = _read_fc(core.fr2path(fc), core.fr2old_path(fc), fr.fc)
     commit_op = types.CommitOp()
     commit_op.add_file.file_resource = fr
     core.fileService.AddCommit(commit_op)
 
 
-def download_one(fr: FileResource):
-    _write_fc(fr.fc, core.get_path(fc), core.config['temp_dir'])
+def download(fr: FileResource):
+    return _write_fc(fr.fc, core.fr2path(fc), core.config['temp_dir'])
+
+def delete(fr: FileResource):
+    # TODO: add an gRPC endpoint
+    pass
+
+
+def acquire_rlock(fr: FileResource) -> bool:
+    if fr.branch.solo:
+        return True
+    else:
+        if not core.fileService.IsLocked(fr):
+            # multiuser branch, but we got the lock
+            core.fileService.SetLockStatus(fr, True)
+            return True
+            # TODO: set timer
+        else:
+            # File is locked out
+            fr_str = '/'.join(fr.path)
+            choice = gui.download_locked_file(fr, fr_str)
+            return False
+
+
+def acquire_wlock(fr: FileResource):
+    if fr.branch.solo:
+        # solo branch. Go right on ahead
+        return True
+    else:
+        if not core.fileService.IsLocked(fr):
+            # multiuser branch, but nobody is locking it the lock
+            # This case is unlikely
+            return True
+        elif fr.lock_status.owner == core.config['user']:
+            # multiuser branch, we hold the lock
+            # this is likely
+            return True
+        else:
+            # We are locked out
+            # This is unlikely
+            fr_str = '/'.join(fr.path)
+            choice = gui.upload_locked_file(fr, fr_str)
+            return False
+
+
+def release_rlock(fr: FileResource):
+    # we need to make sure we own this lock in the first place before we can release it
+    if acquire_rlock(fr):
+        core.fileService.SetLockStatus(fr, False)
+        # TODO: reset rlock timer
+    else:
+        raise RuntimeError("Attempted to release a lock you don't hold")
+
+
+def release_wlock(fr: FileResource):
+    # we need to make sure we own this lock in the first place before we can release it
+    if acquire_wlock(fr):
+        core.fileService.SetLockStatus(fr, False)
+        # TODO: reset wlock timer
+    else:
+        raise RuntimeError("Attempted to release a lock you don't hold")

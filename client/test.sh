@@ -22,6 +22,8 @@ docker run \
        --rm \
        ${GCR_IMAGE}
 
+
+
 # auth and push (makes next build faster)
 gcloud auth configure-docker
 docker push ${GCR_IMAGE}
